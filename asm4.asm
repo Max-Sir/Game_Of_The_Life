@@ -394,7 +394,7 @@ fill_new proc
 	add_ <-4>;left
 	add_ <4>;right
 	cmp al,2;if 2 then life
-	je ost
+	je go ;ost
 	cmp al,3;if 3 then life
 	je ost;life or new life
 	jmp kill;else if not in 2..3 then kill
@@ -472,7 +472,8 @@ init_video_mode endp
 game_pause proc
 	g:
 	call check_press
-	case < cmp dx,scan_code_space > je < jmp ex1 > < jmp g >
+	case < cmp dx,scan_code_space > je < jmp ex1 > < >
+	case < cmp dx,scan_code_ESC > je < jmp gp > < jmp g >
 	ex1:
 	ret
 game_pause endp
@@ -616,7 +617,7 @@ mov game_score,0
 
 losc:
 push cx
-mov cx,44
+mov cx,22
 	loscin:
 	mov al,'*'
 	cmp es:[di],al
