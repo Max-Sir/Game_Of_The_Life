@@ -65,10 +65,22 @@ add_ macro b;macros which compare enviroment of the cell and manipulates al regi
 	true:
 		add al,1
 	e:
-endm add_
+endm
+
+add_1 macro b;macros which compare enviroment of the cell and manipulates al register
+	LOCAL true,e
+	mov ah,'*'
+	cmp byte ptr ds:[si+&b],ah
+	je true
+	jmp e
+	true:
+		add al,1
+	e:
+endm
 		
 
 .data
+    back_copy db 11*22 dup(' ',blue,' ',blue,' ',blue,' ',blue)
 	scstpos equ 94
     video_data equ 0B800h
     blinking_blue equ 10011111b
@@ -113,12 +125,13 @@ start:
 	call fill_background;fill background
 	
 	call rasstanovka;call manual fullfil of the field
-
+;call coll_checker_rewriter
 	
    
 	game_loop: ;inf loop waiting for ESC to exit back to the system or Q to restart the game
 	mov cx,2
-	call fill_new
+	
+	call fill_backgroundcopy;call fill_new
 	;call rasstanovka
 	;call console_pause
 	
@@ -281,6 +294,67 @@ start:
 ;;;;;;;;;;;;;ret
 ;;;;;;;;;;;;;rasstanovka endp 
 
+coll_checker_rewriter proc
+push ax
+push bx
+push cx
+push dx
+push ds
+push es
+push di
+
+redy_video
+mov di,0
+mov ah,' '
+mov cx,80
+kk:
+mov es:[di],ah
+add di,2
+loop kk
+mov di,160*23
+mov cx,80
+kk1:
+mov es:[di],ah
+add di,2
+loop kk1
+mov di,160*24
+mov cx,80
+kk4:
+mov es:[di],ah
+add di,2
+loop kk4
+mov di,0
+mov cx,23
+kk2:
+mov es:[di],ah
+add di,160
+loop kk2
+
+mov di,92
+mov cx,24
+outer1:;?????
+push cx
+mov cx,72
+inner1:
+add di,2
+mov es:[di],ah
+loop inner1
+sub di,68
+add di,160
+pop cx
+loop outer1
+
+exit_video
+pop di
+pop es
+pop ds
+pop dx
+pop cx
+pop bx
+pop ax
+ret
+coll_checker_rewriter endp
+
 
 rasstanovka proc
 ;prepare es and ds
@@ -427,6 +501,87 @@ fill_new proc
     ret
 fill_new endp  
 
+new_algorithm proc
+push ax
+push bx
+push cx
+push dx
+push ds
+push es
+push di
+
+redy_video
+
+	
+push video_data
+pop ds ;ds:si==0B800h
+
+mov ax,@data
+mov es,ax
+
+
+mov si, 164
+lea di,back_copy
+cld
+
+mov cx, 22
+inn1:
+push cx
+mov cx,44
+newl:
+push ax
+xor ax,ax
+mov al, 0
+	add_1 <-160> ;up
+	add_1 <160> ;down
+	add_1 <164> ;down right
+	add_1 <-164> ;up left
+	add_1 <156>;down left
+	add_1 <-156>;up right
+	add_1 <-4>;left
+	add_1 <4>;right
+	cmp al,2;if 2 then life
+	je gol ;ost
+	cmp al,3;if 3 then life
+	je ostl;life or new life
+	jmp killl;else if not in 2..3 then kill
+	ostl:
+	mov ah,'*'
+	mov byte ptr es:[di],ah
+	jmp gol
+	killl:
+	mov ah,' '
+	mov byte ptr es:[di],ah
+	
+	gol:
+	case < cmp ds:[si],ah > je < mov es:[di],ah > <>;;;;;;;;;
+	add di,2;next cell in row
+	add si,2
+	pop ax
+    dec cx ;manual loop
+	cmp cx,0
+	je contt
+	jmp newl
+contt:
+    add si, 72
+	;add di, 2
+    pop cx
+    dec cx
+	cmp cx,0
+	je continuee
+	jmp inn1
+	continuee:
+exit_video
+
+pop di
+pop es
+pop ds
+pop dx
+pop cx
+pop bx
+pop ax
+new_algorithm endp
+
 fill_background proc
     redy_video
     mov cx, 22
@@ -442,6 +597,24 @@ fill_background proc
     exit_video
     ret
 fill_background endp    
+
+fill_backgroundcopy proc
+	call new_algorithm
+    redy_video
+    mov cx, 22
+    mov di, 164; (0,0) of our field
+    lea si, back_copy;what to write to video merory directly
+	mov si,0
+    fpi:
+    push cx
+    mov cx, 44
+    rep movsw;char and attribute
+    add di, 72;go to next row to begin x=0
+    pop cx
+    loop fpi
+    exit_video
+    ret
+fill_backgroundcopy endp  
     
 init_data proc
     push ax
