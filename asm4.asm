@@ -125,7 +125,7 @@ start:
 	call fill_background;fill background
 	
 	call rasstanovka;call manual fullfil of the field
-;call coll_checker_rewriter
+    call coll_checker_rewriter
 	
    
 	game_loop: ;inf loop waiting for ESC to exit back to the system or Q to restart the game
@@ -152,7 +152,7 @@ start:
 	;check if Q was in the keyboard buffer
 	;ddelay ddelay ddelay
 	;;call check_press_q
-	;case < cmp dx,scan_code_q > je < toper < call clear_keyboard_buffer > < jmp rmpg > > <> 
+	case < cmp dx,scan_code_q > je < jmp rmpg > <> 
 	;case < cmp game_score,0000h > je < toper < call print_game_over > <toper < call console_pause > < jmp rmpg > > > <> 
 	jmp game_loop
     
@@ -304,45 +304,62 @@ push es
 push di
 
 redy_video
+
 mov di,0
 mov ah,' '
-mov cx,80
+mov cx,80;line num 1
 kk:
 mov es:[di],ah
+mov es:[di+2],ah
 add di,2
 loop kk
-mov di,160*23
+
+mov di,160*23;after last line
 mov cx,80
 kk1:
 mov es:[di],ah
+mov es:[di+2],ah
 add di,2
 loop kk1
-mov di,160*24
+
+mov di,160*24;after after to pedantic perfectionism
 mov cx,80
 kk4:
 mov es:[di],ah
+mov es:[di+2],ah
 add di,2
 loop kk4
-mov di,0
+
+mov di,0;1st column
 mov cx,23
 kk2:
 mov es:[di],ah
+mov es:[di+2],ah
 add di,160
 loop kk2
 
-mov di,92
-mov cx,24
-outer1:;?????
-push cx
-mov cx,72
-inner1:
-add di,2
+mov di,92;last column
+mov cx,23
+kk3:
 mov es:[di],ah
-loop inner1
-sub di,68
+mov es:[di+2],ah
 add di,160
-pop cx
-loop outer1
+loop kk3
+
+;mov di,92
+;mov cx,24
+;outer1:;?????
+;push cx
+;mov cx,72
+;inner1:
+;add di,2
+;mov es:[di],ah
+;mov es:[di+2],ah
+;loop inner1
+;sub di,144
+;add di,160
+;pop cx
+;loop outer1
 
 exit_video
 pop di
@@ -361,10 +378,18 @@ rasstanovka proc
 redy_video
 push ax
 mov di,164
+
 jollup:
+;;;;;;;
+case < cmp di,164 > jl < mov di,164 > <>
+
+case < cmp di, 160*23+4+88> jg < mov di,160*23+88> <>
+;;;;;;;
 new_score;;;
+
 mov ah,' '
 mov al,'*'
+
 ;07h 21h
 ;check for ' ' in the keyb buffer
 call check_press
@@ -404,6 +429,8 @@ rightt:
 case < cmp dx,scan_code_right > je < case < cmp al,21 > jge <> < toper < toper < add al,1 > < add di, 4> > < jmp jollup > > > <> 
 call clear_keyboard_buffer
 mov x,al
+
+
 
 ESCC:
 
@@ -697,7 +724,7 @@ check_press proc
     mov dx, 0               ;not pressed by default
     mov ah, 01h ;check char in buffer func BIOS
     int 16h
-    jz jump_not_pressed152
+    jz jmop
     xor ah,ah;read char with waiting
     int 16h
     case < cmp ah, scan_code_down > je < mov dx,0050h > <>
@@ -705,8 +732,11 @@ check_press proc
 	case < cmp ah, scan_code_right > je < mov dx,004Dh > <>
 	case < cmp ah, scan_code_up > je < mov dx,0048h > <>
 	case < cmp ah, scan_code_ESC > je < mov dx,0001h > <>
-	case < cmp ah, scan_code_space > je < mov dx,0039h > <>
-	;case < cmp ah, scan_code_q > je < mov dx,0010h > <>
+	case < cmp ah, scan_code_space > je < toper < mov dx,0039h > < jmp hghg > > <jmp hghg>
+	jmop:
+	jmp jump_not_pressed152
+	hghg:
+	case < cmp ah, scan_code_q > je < mov dx,0010h > <>
 	
 	cmp dx,0
     jne jump_not_pressed152
